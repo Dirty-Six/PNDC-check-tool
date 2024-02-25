@@ -106,7 +106,7 @@ if(!isOpenContract) {
   else if(response.lastsFor == 0 && response.owner == "0x0000000000000000000000000000000000000000") {
     lockResponse.value = "LOCK DOESN'T EXIST OR IS ALREADY UNLOCKED";
   }
-  else if(response.owner != connectedAccount.value) {
+  else if(response.owner.toLowerCase() != connectedAccount.value.toLowerCase()) {
     lockResponse.value = 'WRONG WALLET CONNECTED - ONLY THE OWNER CAN UNLOCK';
   }
   else lockResponse.value = 'CAN BE UNLOCKED';
