@@ -164,9 +164,6 @@ async function unlock(){
           Don't connect your wallet to this site, if it asks to connect you're probably on the wrong site. Always check the URL if you're not on "pndc.dirtysix.de" leave the site. 
         </li>
         <li>
-          Use this tool at your own risk. 
-        </li>
-        <li>
           If you run into issues or have questions contact me X (Twitter) at <a target="blank" href="https://twitter.com/Dirty_Six">@Dirty_Six</a>. 
           If not leave me a follow :)
         </li>
