@@ -101,8 +101,13 @@ if(!isOpenContract) {
   //14239
   console.log(response.startInterval + response.lastsFor +'>='+ intervalOnChain.value)
   if(response.startInterval + response.lastsFor >= intervalOnChain.value){
-    var waitFor = (response.startInterval + response.lastsFor - intervalOnChain.value == 0) ? 1 : response.startInterval + response.lastsFor - intervalOnChain.value;
-    lockResponse.value = `UNLOCK WILL FAIL - Unlocks in ${waitFor} Interval(s)`;
+    var lastsForMap = parseInt(response.lastsFor);
+    if(lastsForMap == 128) lastsForMap = 49;
+    else if(lastsForMap == 64) lastsForMap = 36;
+    else if(lastsForMap == 32) lastsForMap = 25;
+
+    var waitFor = parseInt(response.startInterval) + lastsForMap - parseInt(intervalOnChain.value) + 1;
+    lockResponse.value = `UNLOCK WILL FAIL - Unlocks in ${waitFor} Week(s)`;
   } 
   else if(response.lastsFor == 0 && response.owner == "0x0000000000000000000000000000000000000000") {
     lockResponse.value = "LOCK DOESN'T EXIST OR IS ALREADY UNLOCKED";
