@@ -106,7 +106,7 @@ if(!isOpenContract) {
   else if(response.lastsFor == 0 && response.owner == "0x0000000000000000000000000000000000000000") {
     lockResponse.value = "LOCK DOESN'T EXIST OR IS ALREADY UNLOCKED";
   }
-  else if(response.owner.toLowerCase() != connectedAccount.value.toLowerCase()) {
+  else if( !connectedAccount.value || response.owner.toLowerCase() != connectedAccount.value.toLowerCase()) {
     lockResponse.value = 'WRONG WALLET CONNECTED - ONLY THE OWNER CAN UNLOCK';
   }
   else lockResponse.value = 'CAN BE UNLOCKED';
@@ -153,7 +153,7 @@ async function unlock(){
           This tool is not connected or affiliated in any way with the official Pond0x team. For the official site visit <a target="blank" href="https://www.pond0x.com/">www.pond0x.com</a>
         </li>
         <li>
-          Don't accept a unlock transaction if it shows a ridiculous high gas fee.
+          Don't accept an unlock transaction if it shows a ridiculous high gas fee.
         </li>
         <li>
           Use this tool at your own risk. 
