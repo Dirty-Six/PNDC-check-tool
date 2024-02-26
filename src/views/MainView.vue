@@ -10,7 +10,7 @@ const hasMMExtension = !!window.ethereum;
 const checkLoading = ref(false);
 const unlockLoading = ref(false);
 
-const web3 = new Web3(window.ethereum) //'https://mainnet.infura.io/v3/d72d60bfe5ff400fb8b826f6bdd4c366'
+const web3 = new Web3(window.ethereum)
 if(!hasMMExtension) web3.setProvider('https://mainnet.infura.io/v3/d72d60bfe5ff400fb8b826f6bdd4c366')
 
 console.log(web3)
@@ -156,7 +156,7 @@ async function unlock(){
           This tool is not connected or affiliated in any way with the official Pond0x team. For the official site visit <a target="blank" href="https://www.pond0x.com/">www.pond0x.com</a>
         </li>
         <li>
-          Don't accept an unlock transaction if it shows a ridiculous high gas fee.
+          Don't connect your wallet to this site, if it asks to connect you're probably on the wrong site. Always check the URL if you're not on "pndc.dirtysix.de" leave the site. 
         </li>
         <li>
           Use this tool at your own risk. 
