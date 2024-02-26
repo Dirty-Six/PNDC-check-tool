@@ -39,7 +39,7 @@ async function created() {
   const interval = await Pondwater.methods.getIntervalFromChain().call();
   intervalOnChain.value = interval;
 
-  if(hasMMExtension){
+  if(hasMMExtension && false){
     var accounts = await window.ethereum.request({ method: 'eth_accounts' });
     connectedAccount.value = accounts[0];
   }
@@ -60,6 +60,7 @@ async function created() {
 /** Connect Metamask */
 
 async function connectToMetamask(){
+  return false;
 //check metamask is installed
 if (window.ethereum) {
   var accounts;
@@ -106,9 +107,11 @@ if(!isOpenContract) {
   else if(response.lastsFor == 0 && response.owner == "0x0000000000000000000000000000000000000000") {
     lockResponse.value = "LOCK DOESN'T EXIST OR IS ALREADY UNLOCKED";
   }
+  /*
   else if( !connectedAccount.value || response.owner.toLowerCase() != connectedAccount.value.toLowerCase()) {
     lockResponse.value = 'WRONG WALLET CONNECTED - ONLY THE OWNER CAN UNLOCK';
   }
+  */
   else lockResponse.value = 'CAN BE UNLOCKED';
 
   checkLoading.value = false;
@@ -137,7 +140,7 @@ async function unlock(){
 <template>
   <div class="mainContainer">
     <div class="wrapper">
-      <div class="metamask_wrapper">
+      <div class="metamask_wrapper" v-if="false">
         <button @click="connectToMetamask" v-if="!connectedAccount">Connect Metamask</button>
         <p v-else>{{ connectedAccount }}</p>
       </div>
@@ -184,8 +187,11 @@ async function unlock(){
             <i v-if="lockResponse == 'CAN BE UNLOCKED'" class="fa-solid fa-check"></i>
             <i v-else class="fa-solid fa-times"></i>
             {{ lockResponse }}
+            <span v-if="lockResponse == 'CAN BE UNLOCKED'">
+              You can go to the pondwater contract on etherscan and unlock. You find the contract link at <a href="https://www.pond0x.com/contracts">www.pond0x.com/contracts</a>
+            </span>
           </div>
-          <div v-if="lockResponse == 'CAN BE UNLOCKED'" class="unlockRow">
+          <div v-if="false && lockResponse == 'CAN BE UNLOCKED'" class="unlockRow">
             <button class="unlock_button" @click.prevent="unlock">
               Unlock
               <i class="fa-solid fa-spinner fa-spin" v-if="unlockLoading"></i>
