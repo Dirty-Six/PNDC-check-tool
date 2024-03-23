@@ -190,5 +190,38 @@ body {
                 }
             }
         }
+
+        .address_check_form {
+            display: flex;
+            flex-wrap: wrap;
+            label {
+                margin-bottom: 10px;;
+            }
+            input {
+                width: 100%;
+                min-width: 150px;
+                margin: 0;
+            }
+            .check_button {
+                margin-top: 10px;
+                position: relative;
+                min-width: 150px;
+                flex: 1 1 0;
+                box-shadow: 0 0 8px rgba(255,255,255,0.5), 0 0 2px rgba(70, 70, 70, 0.1) inset ;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+                transition: all 0.3s ease-in-out;
+                &:hover {
+                    box-shadow: 0 0 4px rgba(70, 70, 70, 0.1), 0 0 5px rgba( 255,255,255,0.2) inset ;
+                    background: radial-gradient(circle, rgba(103, 184, 237, 0.5) 0%, rgba(4, 59, 98, 0.3) 100%);
+                }
+            }
+        }
+        .addressLocksWrapper {
+            ul {
+                list-style: none;
+                padding: 10px 20px;
+               background: rgba( 255,255,255,0.2);
+            }
+        }
     }
 }
