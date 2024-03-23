@@ -1,6 +1,8 @@
 <script setup>
 import {computed, onMounted, ref} from 'vue'
 import Web3 from 'web3'
+import axios from 'axios'
+
 
 const gasPrice = ref( 0 );
 const myBalance = ref( 0 );
@@ -9,6 +11,10 @@ const connectedAccount = ref('');
 const hasMMExtension = !!window.ethereum;
 const checkLoading = ref(false);
 const unlockLoading = ref(false);
+
+const addressLockIDs = ref([]);
+const searchAddress = ref('');
+const adressCheckLoading = ref(false)
 
 const web3 = new Web3(window.ethereum)
 if(!hasMMExtension) web3.setProvider('https://mainnet.infura.io/v3/d72d60bfe5ff400fb8b826f6bdd4c366')
@@ -52,10 +58,92 @@ async function created() {
 
   }
 
+
+   // getEtherscan();
+
  };
  created();
 
+async function getEtherscan(){
+  const apiKey = '3HKCM3ZRWWZGD4T6EP7T3CITY6C98IB985';
+  const contractAddress = '0xed96E69d54609D9f2cFf8AaCD66CCF83c8A1B470';
+  const specificSenderAddress = searchAddress.value
+console.log('getEtherscan')
 
+if(!specificSenderAddress) return false;
+addressLockIDs.value = [];
+adressCheckLoading.value = true;
+const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${contractAddress}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
+
+axios.get(url)
+  .then(response => {
+    console.log(response);
+    if(response.data.status === "1" && response.data.message === "OK") {
+      // Ensure that the result exists and is not empty
+      
+      const transactions = response.data.result;
+      console.log(transactions);
+      const filteredTransactions = transactions.filter(tx => tx.from.toLowerCase() === specificSenderAddress.toLowerCase());
+      console.log(filteredTransactions);
+      filteredTransactions.forEach(trx => {
+        web3.eth.getTransaction(trx.hash)
+        .then(tx => {
+          console.log('tx', tx, web3.eth.abi.decodeParameter('uint256', tx.data))
+          // Fetch the transaction receipt
+          web3.eth.getTransactionReceipt(trx.hash)
+            .then(receipt => {
+              console.log('Transaction Receipt:', receipt);
+
+              // Check if there are any logs in the receipt
+              if (receipt.logs && receipt.logs.length > 0) {
+                console.log('Logs found:', receipt.logs.length);
+
+                // Iterate over the logs
+                receipt.logs.forEach(async (log, index) => {
+                  console.log(`Log #${index + 1}:`, log);
+
+                  
+
+                  // Decode the log manually
+                  const decodedLog = {
+                    locker: web3.eth.abi.decodeParameter('address', log.topics[1]),
+                    id: web3.eth.abi.decodeParameter('uint', log.topics[2]),
+                    data: web3.eth.abi.decodeParameter('uint256', log.data),
+                  };
+
+                  //decodedLog.data2 = web3.utils.hexToNumberString( decodedLog.data2)
+
+                  console.log(`Log #${index + 1}:`, 'decodedLog', decodedLog);
+
+                  if(index + 1 == 3) {
+                    var newLockObj = {
+                      lockId: parseInt(decodedLog.id),
+                      lockResponse: await checkLock(parseInt(decodedLog.id)),
+                      amount: web3.utils.fromWei(decodedLog.data, "ether")
+                    }
+                    addressLockIDs.value.push(newLockObj)
+                  }
+
+                  adressCheckLoading.value = false;
+
+                });
+              } else {
+                console.log('No logs found in this transaction.');
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching transaction receipt:', error);
+            });
+        })
+      })
+    } else {
+      console.error('No transactions found or error in API response:', response.data);
+    }
+  })
+  .catch(error => {
+    console.error('Error fetching transactions:', error);
+  });
+}
 
 /** Connect Metamask */
 
@@ -82,12 +170,13 @@ if (window.ethereum) {
 const lockId = ref(null)
 const lockResponse = ref('')
 
-async function checkLock(){
+async function checkLock(forceId){
   
-  console.log(lockId.value);
-  if( !lockId.value || checkLoading.value) return false;
+  console.log(lockId.value, forceId);
+  if( (!lockId.value && !forceId) ) return false;
 
   checkLoading.value = true;
+  var searchLock = (forceId) ? forceId : lockId.value;
 
   const isOpenContract = await Pondwater.methods.isOpen().call();
 if(!isOpenContract) {
@@ -95,7 +184,7 @@ if(!isOpenContract) {
   return false;
 }
 
-  const response = await Pondwater.methods.locks(lockId.value).call();
+  const response = await Pondwater.methods.locks(searchLock).call();
   console.log('checkLockData', response, isOpenContract)
   //if (!isOpen || ((lockData.startInterval + lockData.lastsFor) >= getIntervalFromChain())) revert CannotUnlockYet();
   //14239
@@ -107,17 +196,22 @@ if(!isOpenContract) {
     else if(lastsForMap == 32) lastsForMap = 25;
 
     var waitFor = parseInt(response.startInterval) + lastsForMap - parseInt(intervalOnChain.value) + 1;
-    lockResponse.value = `UNLOCK WILL FAIL - Unlocks in ${waitFor} Week(s)`;
+    if(forceId) return `UNLOCK WILL FAIL - Unlocks in ${waitFor} Week(s)`;
+    else lockResponse.value = `UNLOCK WILL FAIL - Unlocks in ${waitFor} Week(s)`;
   } 
   else if(response.lastsFor == 0 && response.owner == "0x0000000000000000000000000000000000000000") {
-    lockResponse.value = "LOCK DOESN'T EXIST OR IS ALREADY UNLOCKED";
+    if(forceId) return "LOCK IS ALREADY UNLOCKED";
+    else lockResponse.value = "LOCK DOESN'T EXIST OR IS ALREADY UNLOCKED";
   }
   /*
   else if( !connectedAccount.value || response.owner.toLowerCase() != connectedAccount.value.toLowerCase()) {
     lockResponse.value = 'WRONG WALLET CONNECTED - ONLY THE OWNER CAN UNLOCK';
   }
   */
-  else lockResponse.value = 'CAN BE UNLOCKED';
+  else {
+    if(forceId) return 'CAN BE UNLOCKED';
+    else lockResponse.value = 'CAN BE UNLOCKED';
+  }
 
   checkLoading.value = false;
 
@@ -171,7 +265,37 @@ async function unlock(){
     </div>
       <div class="lock_check_wrapper">
         <h3>Check $PNDC Locks</h3>
+        
         <div>
+          <div class="address_check_form">
+            <label>ETH Adress to look up</label>
+            <input type="text" v-model="searchAddress" />
+            <button class="check_button" @click.prevent="getEtherscan">
+              Check
+              <i class="fa-solid fa-spinner fa-spin" v-if="adressCheckLoading"></i>
+            </button>
+          </div>
+          <div class="addressLocksWrapper" v-if="addressLockIDs.length">
+            <label>MY LOCKS</label>
+
+            <div v-for="(lock, index) in addressLockIDs" :key="index" class="addressLock">
+              Lock# {{ index + 1 }}: 
+              <ul>
+                <li>ID: {{lock.lockId}}</li>
+                <li>Amount: {{lock.amount}} PNDC</li>
+                <li
+                  :class="{
+                    'success' :lockResponse == 'CAN BE UNLOCKED',
+                    'failed' : lockResponse != 'CAN BE UNLOCKED'
+                  }"  
+                >
+                  {{lock.lockResponse}}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div v-if="false">
           <label>LOCK ID</label>
           <div class="lock_check_form">
             <input type="text" v-model="lockId" />
