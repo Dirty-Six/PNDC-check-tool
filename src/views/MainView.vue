@@ -15,6 +15,9 @@ const unlockLoading = ref(false);
 const addressLockIDs = ref([]);
 const searchAddress = ref('');
 const adressCheckLoading = ref(false)
+const startblock = ref(0);
+const endblock = ref(99999999);
+const resultInfo = ref('')
 
 const web3 = new Web3(window.ethereum)
 if(!hasMMExtension) web3.setProvider('https://mainnet.infura.io/v3/d72d60bfe5ff400fb8b826f6bdd4c366')
@@ -37,7 +40,7 @@ async function created() {
 
   const gasInterval = setInterval(async ()=>{
     const gas = await web3.eth.getGasPrice()
-    console.log(gas)
+    //console.log(gas)
     gasPrice.value = parseInt(parseInt(gas)/1000000000);
   }, 5000)
   
@@ -59,21 +62,23 @@ async function created() {
   }
 
 
-   // getEtherscan();
-
  };
  created();
 
-async function getEtherscan(){
+async function getEtherscan(autoload){
   const apiKey = '3HKCM3ZRWWZGD4T6EP7T3CITY6C98IB985';
   const contractAddress = '0xed96E69d54609D9f2cFf8AaCD66CCF83c8A1B470';
   const specificSenderAddress = searchAddress.value
-console.log('getEtherscan')
+  
+console.log('getEtherscan', autoload)
 
 if(!specificSenderAddress) return false;
-addressLockIDs.value = [];
+if(!autoload){
+  resultInfo.value = 'Loading...';
+  addressLockIDs.value = [];
+} 
 adressCheckLoading.value = true;
-const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${contractAddress}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
+const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${contractAddress}&startblock=${startblock.value}&endblock=${endblock.value}&sort=asc&apikey=${apiKey}`;
 
 axios.get(url)
   .then(response => {
@@ -136,6 +141,20 @@ axios.get(url)
             });
         })
       })
+
+      //Autoload next transactions
+      if(transactions.length == 10000){
+        startblock.value = transactions[transactions.length-1].blockNumber;
+        console.log('Restart Check', startblock.value)
+        getEtherscan(true);
+
+      }else{
+        startblock.value = 0;
+        if(addressLockIDs.value.length == 0) {
+          adressCheckLoading.value = false;
+          resultInfo.value = "No Locks found for this address."
+        }
+      }
     } else {
       console.error('No transactions found or error in API response:', response.data);
     }
@@ -268,9 +287,9 @@ async function unlock(){
         
         <div>
           <div class="address_check_form">
-            <label>ETH Adress to look up</label>
+            <label>ETH address to look up</label>
             <input type="text" v-model="searchAddress" />
-            <button class="check_button" @click.prevent="getEtherscan">
+            <button class="check_button" @click.prevent="getEtherscan(false)">
               Check
               <i class="fa-solid fa-spinner fa-spin" v-if="adressCheckLoading"></i>
             </button>
@@ -279,7 +298,7 @@ async function unlock(){
             <label>MY LOCKS</label>
 
             <div v-for="(lock, index) in addressLockIDs" :key="index" class="addressLock">
-              Lock# {{ index + 1 }}: 
+              <h3>Lock# {{ index + 1 }}</h3> 
               <ul>
                 <li>ID: {{lock.lockId}}</li>
                 <li>Amount: {{lock.amount}} PNDC</li>
@@ -293,6 +312,9 @@ async function unlock(){
                 </li>
               </ul>
             </div>
+          </div>
+          <div v-else class="addressResultsInfo">
+            {{ resultInfo }}
           </div>
         </div>
         <div v-if="false">
